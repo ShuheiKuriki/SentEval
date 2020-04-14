@@ -20,7 +20,7 @@ PATH_TO_VEC = '../glove/glove.840B.300d.txt'
 
 # import SentEval
 sys.path.insert(0, PATH_TO_SENTEVAL)
-import senteval2
+import senteval
 import rvsml
 
 

@@ -12,21 +12,22 @@ Generic sentence evaluation scripts wrapper
 '''
 from __future__ import absolute_import, division, unicode_literals
 
-from senteval import utils
-from senteval.binary import CREval, MREval, MPQAEval, SUBJEval
-from senteval.snli import SNLIEval
-from senteval.trec import TRECEval
-from senteval.sick import SICKRelatednessEval, SICKEntailmentEval
-from senteval.mrpc import MRPCEval
-from senteval.sts import STS12Eval, STS13Eval, STS14Eval, STS15Eval, STS16Eval, STSBenchmarkEval
-from senteval.sst import SSTEval
-from senteval.rank import ImageCaptionRetrievalEval
-from senteval.probing import *
+from .utils import dotdict
+from .binary import CREval, MREval, MPQAEval, SUBJEval
+from .snli import SNLIEval
+from .trec import TRECEval
+from .sick import SICKRelatednessEval, SICKEntailmentEval
+from .mrpc import MRPCEval
+from .sts import STS12Eval, STS13Eval, STS14Eval, STS15Eval, STS16Eval, STSBenchmarkEval
+from .sst import SSTEval
+from .rank import ImageCaptionRetrievalEval
+from .probing import *
+import rvsml
 
 class SE(object):
-    def __init__(self, params, batcher, prepare=None):
+    def __init__(self, params, vectorizer, prepare=None):
         # parameters
-        params = utils.dotdict(params)
+        params = dotdict(params)
         params.usepytorch = True if 'usepytorch' not in params else params.usepytorch
         params.seed = 1111 if 'seed' not in params else params.seed
 
@@ -41,8 +42,8 @@ class SE(object):
 
         self.params = params
 
-        # batcher and prepare
-        self.batcher = batcher
+        # vectorizer and prepare
+        self.vectorizer = vectorizer
         self.prepare = prepare if prepare else lambda x, y: None
 
         self.list_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',
@@ -53,7 +54,7 @@ class SE(object):
                            'BigramShift', 'Tense', 'SubjNumber', 'ObjNumber',
                            'OddManOut', 'CoordinationInversion']
 
-    def eval(self, name):
+    def eval(self, name, method='dtw'):
         # evaluate on evaluation [name], either takes string or list of strings
         if (isinstance(name, list)):
             self.results = {x: self.eval(x) for x in name}
@@ -118,6 +119,18 @@ class SE(object):
         self.params.current_task = name
         self.evaluation.do_prepare(self.params, self.prepare)
 
-        self.results = self.evaluation.run(self.params, self.batcher)
+        logname = name + method
+        logger = logging.getLogger(logname)
+        logger.info('done_prepare')
 
-        return self.results
+        logfile = '{}_{}.log'.format(name,method)
+        
+        trainset, trainsetnum, testset, testsetdata, testsetdatanum, testsetlabel, testsetnum = self.evaluation.set_data(self.params, self.vectorizer)
+
+        classnum = self.evaluation.classnum
+        dim = self.params.wvec_dim
+
+        if method=='dtw':
+            rvsml.EvaluateRVSML_dtw(classnum, dim, trainset, trainsetnum, testset, testsetdata, testsetdatanum, testsetlabel, testsetnum, logname, logfile)
+
+        return

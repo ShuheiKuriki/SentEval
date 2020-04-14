@@ -14,7 +14,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 import copy
-from senteval2 import utils
+from senteval import utils
 
 import torch
 from torch import nn

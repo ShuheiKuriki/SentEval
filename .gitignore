@@ -10,6 +10,9 @@ __pycache__/
 # log files
 *.log
 *.txt
+*.json
+
+.DS_Store
 
 # data files
 data/downstream
@@ -17,3 +20,8 @@ data/probing
 
 fasttext
 glove
+
+bin
+lib
+pyvenv.cfg
+.envrc
